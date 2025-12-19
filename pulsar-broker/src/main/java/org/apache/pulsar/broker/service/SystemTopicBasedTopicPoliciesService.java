@@ -565,6 +565,7 @@ public class SystemTopicBasedTopicPoliciesService implements TopicPoliciesServic
 
     @VisibleForTesting
     @NonNull CompletableFuture<Boolean> prepareInitPoliciesCacheAsync(@NonNull NamespaceName namespace) {
+        log.info("enter prepareInitPoliciesCacheAsync. ns:{}. this:{}", namespace, this);
         requireNonNull(namespace);
         if (closed.get()) {
             return CompletableFuture.completedFuture(false);
@@ -825,6 +826,8 @@ public class SystemTopicBasedTopicPoliciesService implements TopicPoliciesServic
         }
         reader.readNextAsync()
                 .thenAccept(msg -> {
+                    log.info("finish readMorePoliciesAsync 1. ns:{}, this:{}, reader:{}",
+                            namespaceObject.toString(), this, reader);
                     try {
                         refreshTopicPoliciesCache(msg);
                         try {
@@ -838,6 +841,8 @@ public class SystemTopicBasedTopicPoliciesService implements TopicPoliciesServic
                     }
                 })
                 .whenComplete((__, ex) -> {
+                    log.info("finish readMorePoliciesAsync 2. ns:{}, this:{}, reader:{}, ex:{}",
+                            namespaceObject.toString(), this, reader, ex);
                     if (ex == null) {
                         readMorePoliciesAsync(reader);
                     } else {
