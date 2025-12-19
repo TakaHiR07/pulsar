@@ -492,8 +492,10 @@ public class SystemTopicBasedTopicPoliciesServiceTest extends MockedPulsarServic
         logger.addAppender(appender);
 
         // create namespace-5 and topic
+        log.info("origin SystemTopicBasedTopicPoliciesService:{}", pulsar.getTopicPoliciesService());
         SystemTopicBasedTopicPoliciesService spyService =
                 Mockito.spy(new SystemTopicBasedTopicPoliciesService(pulsar));
+        log.info("spy SystemTopicBasedTopicPoliciesService:{}", spyService);
         FieldUtils.writeField(pulsar, "topicPoliciesService", spyService, true);
 
 
@@ -515,17 +517,22 @@ public class SystemTopicBasedTopicPoliciesServiceTest extends MockedPulsarServic
         FieldUtils.writeDeclaredField(spyService, "readerCaches", spyReaderCaches, true);
 
         // set topic policy. create producer for __change_event topic
+        log.info("start setMaxConsumersPerSubscription");
         admin.topicPolicies().setMaxConsumersPerSubscription(topic, 1);
+        log.info("finish setMaxConsumersPerSubscription");
         future = spyService.getPoliciesCacheInit(NamespaceName.get(NAMESPACE5));
         Assert.assertNotNull(future);
+        assertTrue(future.isDone());
 
         // trigger close reader of __change_event directly, simulate that reader
         // is closed for some reason, such as topic unload or broker restart.
         // since prepareInitPoliciesCacheAsync() has been executed, it would go into readMorePoliciesAsync(),
         // throw exception, output "Closing the topic policies reader for" and do cleanPoliciesCacheInitMap()
+        log.info("start close spy reader");
         SystemTopicClient.Reader<PulsarEvent> reader = readerCompletableFuture.get();
         reader.close();
         log.info("successfully close spy reader");
+
         Awaitility.await().untilAsserted(() -> {
             boolean logFound = logMessages.stream()
                     .anyMatch(msg -> msg.contains("Closing the topic policies reader for"));
@@ -598,9 +605,11 @@ public class SystemTopicBasedTopicPoliciesServiceTest extends MockedPulsarServic
         logger.addAppender(appender);
 
         // create namespace-5 and topic
+        log.info("origin SystemTopicBasedTopicPoliciesService:{}", pulsar.getTopicPoliciesService());
+        pulsar.getTopicPoliciesService().close();
         SystemTopicBasedTopicPoliciesService spyService =
                 Mockito.spy(new SystemTopicBasedTopicPoliciesService(pulsar));
-        FieldUtils.writeField(pulsar, "topicPoliciesService", spyService, true);
+        log.info("spy SystemTopicBasedTopicPoliciesService:{}", spyService);
 
 
         admin.namespaces().createNamespace(NAMESPACE5);
